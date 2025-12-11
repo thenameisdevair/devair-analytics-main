@@ -1,4 +1,9 @@
 // src/app/page.tsx
+
+// 💡 Tell Next this route is always dynamic (no static pre-render / cache)
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { AnalyticsClientPage } from "./AnalyticsClientPage";
 
 import {
@@ -36,9 +41,10 @@ export default async function Page({ searchParams }: PageProps) {
       }
       baseUser = await getUserOverviewByFid(fidNum);
     } else {
-      const username = usernameParam && usernameParam.trim().length > 0
-        ? usernameParam.trim()
-        : "devair-md";
+      const username =
+        usernameParam && usernameParam.trim().length > 0
+          ? usernameParam.trim()
+          : "devair-md";
       baseUser = await getUserOverviewByUsername(username);
     }
 

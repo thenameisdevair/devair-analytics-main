@@ -5,12 +5,12 @@ import { useEffect } from "react";
 /**
  * MiniAppReady
  *
- * In the Farcaster mini app container, the host injects a global `window.sdk`.
- * We just need to call `sdk.actions.ready()` on THAT object.
+ * - Assumes the Farcaster Mini App SDK is loaded via a <Script> tag
+ *   at "https://miniapps.farcaster.xyz/sdk/v1".
+ * - Checks if we're actually inside a mini app (using sdk.isInMiniApp if available).
+ * - Calls sdk.actions.ready() so Farcaster stops showing the "Ready not called" warning.
  *
- * We do NOT load any extra script here. If you inject another SDK bundle,
- * you end up calling ready() on the wrong instance and the host keeps
- * showing "Ready not called".
+ * Outside of Farcaster (localhost, normal browser) this just logs and does nothing.
  */
 export function MiniAppReady() {
   useEffect(() => {
@@ -18,19 +18,45 @@ export function MiniAppReady() {
 
     function tryCallReady() {
       const sdk = w.sdk;
-      if (sdk && sdk.actions && typeof sdk.actions.ready === "function") {
+      if (!sdk) {
+        console.log("[MiniApp] sdk not present yet");
+        return false;
+      }
+
+      // If SDK exposes a helper like isInMiniApp / isMiniApp, use it
+      let inMiniApp = true;
+      try {
+        if (typeof sdk.isInMiniApp === "function") {
+          inMiniApp = sdk.isInMiniApp();
+        } else if (typeof sdk.isMiniApp === "function") {
+          inMiniApp = sdk.isMiniApp();
+        }
+      } catch (e) {
+        console.warn("[MiniApp] error checking isInMiniApp", e);
+      }
+
+      if (!inMiniApp) {
+        console.log("[MiniApp] Not running inside Farcaster mini app, skipping ready()");
+        return true; // we’re “done” for this environment
+      }
+
+      if (
+        sdk.actions &&
+        typeof sdk.actions.ready === "function"
+      ) {
         sdk.actions.ready();
         console.log("[MiniApp] sdk.actions.ready() called ✅");
         return true;
       }
-      console.log("[MiniApp] sdk not present yet");
+
+      console.log("[MiniApp] sdk.actions.ready not available yet");
       return false;
     }
 
     // Try immediately
     let done = tryCallReady();
 
-    // If not ready yet, keep checking a few times (for safety)
+    // Retry a few times in case SDK or context is attached a bit later
     const intervalId = setInterval(() => {
       if (done) {
         clearInterval(intervalId);
@@ -43,6 +69,5 @@ export function MiniAppReady() {
     return () => clearInterval(intervalId);
   }, []);
 
-  // No UI
-  return null;
+  return null; // no UI
 }

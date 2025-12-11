@@ -3,56 +3,46 @@
 import { useEffect } from "react";
 
 /**
- * This component:
- * 1. Injects the Farcaster Mini App SDK script into the page
- * 2. Calls sdk.actions.ready() once it's loaded
+ * MiniAppReady
  *
- * Farcaster is specifically looking for sdk.actions.ready()
- * or it will keep showing the "Ready not called" warning.
+ * In the Farcaster mini app container, the host injects a global `window.sdk`.
+ * We just need to call `sdk.actions.ready()` on THAT object.
+ *
+ * We do NOT load any extra script here. If you inject another SDK bundle,
+ * you end up calling ready() on the wrong instance and the host keeps
+ * showing "Ready not called".
  */
 export function MiniAppReady() {
   useEffect(() => {
-    const scriptId = "farcaster-miniapps-sdk";
+    const w = window as any;
 
-    function callReady() {
-      try {
-        const w = window as any;
-        if (w.sdk && w.sdk.actions && typeof w.sdk.actions.ready === "function") {
-          w.sdk.actions.ready();
-          // Optional: log for your own debugging
-          console.log("[MiniApp] sdk.actions.ready() called ✅");
-        } else {
-          console.log("[MiniApp] sdk not available yet");
-        }
-      } catch (e) {
-        console.error("[MiniApp] Error calling sdk.actions.ready()", e);
+    function tryCallReady() {
+      const sdk = w.sdk;
+      if (sdk && sdk.actions && typeof sdk.actions.ready === "function") {
+        sdk.actions.ready();
+        console.log("[MiniApp] sdk.actions.ready() called ✅");
+        return true;
       }
+      console.log("[MiniApp] sdk not present yet");
+      return false;
     }
 
-    // If SDK script already exists, just call ready
-    if (document.getElementById(scriptId)) {
-      callReady();
-      return;
-    }
+    // Try immediately
+    let done = tryCallReady();
 
-    // Otherwise inject the script, then call ready() on load
-    const s = document.createElement("script");
-    s.id = scriptId;
-    s.src = "https://miniapps.farcaster.xyz/sdk/v1"; // SDK URL from docs
-    s.async = true;
-    s.onload = () => {
-      console.log("[MiniApp] Farcaster SDK loaded");
-      callReady();
-    };
-    s.onerror = (err) => {
-      console.error("[MiniApp] Failed to load Farcaster SDK", err);
-    };
+    // If not ready yet, keep checking a few times (for safety)
+    const intervalId = setInterval(() => {
+      if (done) {
+        clearInterval(intervalId);
+        return;
+      }
+      done = tryCallReady();
+      if (done) clearInterval(intervalId);
+    }, 500);
 
-    document.head.appendChild(s);
-
-    // no cleanup needed; script can stay for the session
+    return () => clearInterval(intervalId);
   }, []);
 
-  // Nothing visual – it just does the handshake
+  // No UI
   return null;
 }

@@ -1,0 +1,13 @@
+{
+  "name": "Devair Analytics",
+  "description": "Personal analytics dashboard for your Farcaster account.",
+  "icon": "https://devair-analytics-main.vercel.app/icon.png",
+  "actions": [
+    {
+      "id": "devair-analytics-overview",
+      "name": "View my analytics",
+      "url": "https://devair-analytics-main.vercel.app/?fid={fid}",
+      "contexts": ["profile"]
+    }
+  ]
+}

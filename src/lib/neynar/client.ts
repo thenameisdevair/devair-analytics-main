@@ -5,7 +5,7 @@ const NEYNAR_BASE_URL = "https://api.neynar.com/v2";
 
 if (!NEYNAR_API_KEY) {
   console.warn(
-    "[neynar] NEYNAR_API_KEY is not set. Set it in .env.local to enable live data."
+    "[neynar] NEYNAR_API_KEY is not set. Set it in .env.local or Vercel env to enable live data."
   );
 }
 
@@ -40,5 +40,16 @@ export async function getUserProfileByUsername(username: string) {
   const data = await neynarFetch(
     `/farcaster/user/by_username?username=${encodeURIComponent(username)}`
   );
-  return data; // Neynar returns { user: { ... } }
+  return data; // { user: { ... } }
+}
+
+/**
+ * Fetch a single Farcaster user by fid.
+ * Docs: GET /v2/farcaster/user?fid=...
+ */
+export async function getUserProfileByFid(fid: number) {
+  const data = await neynarFetch(
+    `/farcaster/user?fid=${encodeURIComponent(String(fid))}`
+  );
+  return data; // { user: { ... } }
 }

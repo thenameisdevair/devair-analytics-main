@@ -1,28 +1,46 @@
 // src/app/page.tsx
 import { AnalyticsClientPage } from "./AnalyticsClientPage";
-import { getUserOverview } from "../lib/neynar/userOverview";
+
+import {
+  getUserOverviewByUsername,
+  getUserOverviewByFid,
+} from "../lib/neynar/userOverview";
+
 import {
   getUserCastsWithMetrics,
   type CastWithMetrics,
 } from "../lib/neynar/userCasts";
+
 import { getVerifiedFollowerCount } from "../lib/neynar/verifiedFollowers";
 
-type SearchParamsPromise = Promise<{
-  username?: string;
-} | undefined>;
+type PageProps = {
+  searchParams?: {
+    username?: string;
+    fid?: string;
+  };
+};
 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: SearchParamsPromise;
-}) {
-  // ✅ Correct way for Next 15+ (searchParams is a Promise)
-  const resolved = (await searchParams) || {};
-  const username = resolved.username || "devair-md";
+export default async function Page({ searchParams }: PageProps) {
+  const usernameParam = searchParams?.username;
+  const fidParam = searchParams?.fid;
 
   try {
-    // 1) Basic profile from Neynar
-    const baseUser = await getUserOverview(username);
+    // 1) Decide how to load the user
+    //    Priority: fid (mini-app) → username → default "devair-md"
+    let baseUser;
+
+    if (fidParam) {
+      const fidNum = Number(fidParam);
+      if (!fidNum || Number.isNaN(fidNum)) {
+        throw new Error(`Invalid fid query param: ${fidParam}`);
+      }
+      baseUser = await getUserOverviewByFid(fidNum);
+    } else {
+      const username = usernameParam && usernameParam.trim().length > 0
+        ? usernameParam.trim()
+        : "devair-md";
+      baseUser = await getUserOverviewByUsername(username);
+    }
 
     // 2) Verified followers – best effort
     let verifiedFollowerCount = 0;
@@ -37,7 +55,7 @@ export default async function Page({
       verifiedFollowerCount,
     };
 
-    // 3) Casts with metrics – best effort (if it fails, we still render the page)
+    // 3) Casts with metrics – best effort
     let casts: CastWithMetrics[] = [];
     try {
       casts = await getUserCastsWithMetrics(user.fid);
@@ -49,16 +67,16 @@ export default async function Page({
   } catch (err) {
     console.error("[page] Fatal Neynar error", err);
 
-    // Hard fail: show a clear error instead of fake demo data
     return (
-      <main className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-50">
-        <div className="p-6 rounded-lg border border-red-500/40 bg-red-500/5 max-w-md text-center">
-          <h1 className="text-lg font-semibold text-red-400">
+      <main className="min-h-screen flex items-center justify-center">
+        <div className="p-6 rounded-lg border border-red-500/40 bg-red-500/5">
+          <h1 className="text-lg font-semibold text-red-500">
             Failed to load data from Neynar
           </h1>
-          <p className="text-sm mt-2 text-slate-300">
-            Check your <code>NEYNAR_API_KEY</code> in <code>.env.local</code> and
-            your network connection, then refresh this page.
+          <p className="text-sm mt-2 text-neutral-300">
+            Check your <code>NEYNAR_API_KEY</code> in your environment
+            (.env.local or Vercel env) and your network connection, then
+            refresh the page.
           </p>
         </div>
       </main>

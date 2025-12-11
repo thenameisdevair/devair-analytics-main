@@ -1,5 +1,8 @@
 // src/lib/neynar/userOverview.ts
-import { getUserProfileByUsername } from "./client";
+import {
+  getUserProfileByUsername,
+  getUserProfileByFid,
+} from "./client";
 
 export type UserOverview = {
   fid: number;
@@ -10,22 +13,9 @@ export type UserOverview = {
   verifiedFollowerCount: number;
 };
 
-export async function getUserOverview(
-  username: string
-): Promise<UserOverview> {
-  const data = await getUserProfileByUsername(username);
-
-  // Neynar can return either { user: {...} } or { result: { user: {...} } }
-  const user =
-    (data as any).user ??
-    (data as any).result?.user ??
-    null;
-
-  if (!user) {
-    throw new Error(
-      `[neynar] getUserOverview: no user found in response for username "${username}"`
-    );
-  }
+// Small helper to normalize Neynar's user object → our shape
+function mapNeynarUserToOverview(rawUser: any): UserOverview {
+  const user = rawUser ?? {};
 
   return {
     fid: user.fid,
@@ -33,7 +23,30 @@ export async function getUserOverview(
     displayName: user.display_name ?? user.username,
     avatarUrl: user.pfp_url ?? undefined,
     followerCount: user.follower_count ?? 0,
-    // still 0 for now; filled later by getVerifiedFollowerCount
+    // we keep this at 0 here – the real value is injected later
     verifiedFollowerCount: 0,
   };
+}
+
+/**
+ * Username-based overview (used for manual ?username=… mode
+ * and as a default when no fid is passed).
+ */
+export async function getUserOverviewByUsername(
+  username: string
+): Promise<UserOverview> {
+  const data = await getUserProfileByUsername(username);
+  // Neynar returns { user: { ... } }
+  return mapNeynarUserToOverview(data.user);
+}
+
+/**
+ * Fid-based overview (used for mini-app mode: ?fid=...)
+ */
+export async function getUserOverviewByFid(
+  fid: number
+): Promise<UserOverview> {
+  const data = await getUserProfileByFid(fid);
+  // Neynar returns { user: { ... } } here as well
+  return mapNeynarUserToOverview(data.user);
 }

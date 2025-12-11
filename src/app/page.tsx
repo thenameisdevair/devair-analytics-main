@@ -1,6 +1,6 @@
 // src/app/page.tsx
 
-// 💡 Tell Next this route is always dynamic (no static pre-render / cache)
+// 🔁 Always dynamic: do NOT bake devair-md at build time
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -18,23 +18,31 @@ import {
 
 import { getVerifiedFollowerCount } from "../lib/neynar/verifiedFollowers";
 
-type PageProps = {
-  searchParams?: {
-    username?: string;
-    fid?: string;
-  };
+// 👇 In *your* Next version, `searchParams` is a Promise in server components
+type SearchParamsShape = {
+  username?: string;
+  fid?: string;
 };
 
-export default async function Page({ searchParams }: PageProps) {
-  const usernameParam = searchParams?.username;
-  const fidParam = searchParams?.fid;
+type PageProps = {
+  searchParams?: Promise<SearchParamsShape>;
+};
+
+export default async function Page(props: PageProps) {
+  // 🔑 This is the important part:
+  // Unwrap the Promise-based searchParams from Next
+  const resolved = (await props.searchParams) || {};
+  const usernameParam = resolved.username;
+  const fidParam = resolved.fid;
+
+  const defaultUsername = "devair-md";
 
   try {
     // 1) Decide how to load the user
-    //    Priority: fid (mini-app) → username → default "devair-md"
+    //    Priority: fid (mini-app) → username → default
     let baseUser;
 
-    if (fidParam) {
+    if (fidParam && fidParam.trim().length > 0) {
       const fidNum = Number(fidParam);
       if (!fidNum || Number.isNaN(fidNum)) {
         throw new Error(`Invalid fid query param: ${fidParam}`);
@@ -44,7 +52,8 @@ export default async function Page({ searchParams }: PageProps) {
       const username =
         usernameParam && usernameParam.trim().length > 0
           ? usernameParam.trim()
-          : "devair-md";
+          : defaultUsername;
+
       baseUser = await getUserOverviewByUsername(username);
     }
 
@@ -80,9 +89,10 @@ export default async function Page({ searchParams }: PageProps) {
             Failed to load data from Neynar
           </h1>
           <p className="text-sm mt-2 text-neutral-300">
-            Check your <code>NEYNAR_API_KEY</code> in your environment
-            (.env.local or Vercel env) and your network connection, then
-            refresh the page.
+            Check your <code>NEYNAR_API_KEY</code> and network, then refresh.
+            <br />
+            You can also test with{" "}
+            <code>?username=somehandle</code> or <code>?fid=123</code>.
           </p>
         </div>
       </main>

@@ -1,63 +1,53 @@
 // src/app/page.tsx
 
-// 🔁 Always dynamic: do NOT bake devair-md at build time
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { AnalyticsClientPage } from "./AnalyticsClientPage";
-
 import {
   getUserOverviewByUsername,
   getUserOverviewByFid,
 } from "../lib/neynar/userOverview";
-
 import {
   getUserCastsWithMetrics,
   type CastWithMetrics,
 } from "../lib/neynar/userCasts";
-
 import { getVerifiedFollowerCount } from "../lib/neynar/verifiedFollowers";
-
-// 👇 In *your* Next version, `searchParams` is a Promise in server components
-type SearchParamsShape = {
-  username?: string;
-  fid?: string;
-};
+import { ConsentGate } from "../components/ConsentGate";
 
 type PageProps = {
-  searchParams?: Promise<SearchParamsShape>;
+  searchParams?: {
+    username?: string;
+    fid?: string;
+  };
 };
 
-export default async function Page(props: PageProps) {
-  // 🔑 This is the important part:
-  // Unwrap the Promise-based searchParams from Next
-  const resolved = (await props.searchParams) || {};
-  const usernameParam = resolved.username;
-  const fidParam = resolved.fid;
+export default async function Page({ searchParams }: PageProps) {
+  const usernameParam = searchParams?.username;
+  const fidParam = searchParams?.fid;
 
-  const defaultUsername = "devair-md";
+  let fidFromQuery: number | null = null;
+  if (fidParam) {
+    const parsed = Number(fidParam);
+    if (!Number.isNaN(parsed) && parsed > 0) {
+      fidFromQuery = parsed;
+    }
+  }
 
   try {
-    // 1) Decide how to load the user
-    //    Priority: fid (mini-app) → username → default
+    // 1) Choose how to load the user: fid → username → default
     let baseUser;
-
-    if (fidParam && fidParam.trim().length > 0) {
-      const fidNum = Number(fidParam);
-      if (!fidNum || Number.isNaN(fidNum)) {
-        throw new Error(`Invalid fid query param: ${fidParam}`);
-      }
-      baseUser = await getUserOverviewByFid(fidNum);
+    if (fidFromQuery) {
+      baseUser = await getUserOverviewByFid(fidFromQuery);
     } else {
       const username =
         usernameParam && usernameParam.trim().length > 0
           ? usernameParam.trim()
-          : defaultUsername;
-
+          : "devair-md";
       baseUser = await getUserOverviewByUsername(username);
     }
 
-    // 2) Verified followers – best effort
+    // 2) Verified followers (best-effort)
     let verifiedFollowerCount = 0;
     try {
       verifiedFollowerCount = await getVerifiedFollowerCount(baseUser.fid);
@@ -70,7 +60,7 @@ export default async function Page(props: PageProps) {
       verifiedFollowerCount,
     };
 
-    // 3) Casts with metrics – best effort
+    // 3) Cast metrics (best-effort)
     let casts: CastWithMetrics[] = [];
     try {
       casts = await getUserCastsWithMetrics(user.fid);
@@ -78,7 +68,11 @@ export default async function Page(props: PageProps) {
       console.warn("[page] getUserCastsWithMetrics failed, using []", err);
     }
 
-    return <AnalyticsClientPage user={user} initialCasts={casts} />;
+    return (
+      <ConsentGate fid={fidFromQuery}>
+        <AnalyticsClientPage user={user} initialCasts={casts} />
+      </ConsentGate>
+    );
   } catch (err) {
     console.error("[page] Fatal Neynar error", err);
 
@@ -89,10 +83,8 @@ export default async function Page(props: PageProps) {
             Failed to load data from Neynar
           </h1>
           <p className="text-sm mt-2 text-neutral-300">
-            Check your <code>NEYNAR_API_KEY</code> and network, then refresh.
-            <br />
-            You can also test with{" "}
-            <code>?username=somehandle</code> or <code>?fid=123</code>.
+            Check your <code>NEYNAR_API_KEY</code> and network connection, then
+            refresh the page.
           </p>
         </div>
       </main>

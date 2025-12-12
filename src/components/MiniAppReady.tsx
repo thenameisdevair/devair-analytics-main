@@ -2,71 +2,40 @@
 
 import { useEffect } from "react";
 
-/**
- * MiniAppReady
- *
- * - Assumes the Farcaster Mini App SDK is loaded via a <Script> tag
- *   at "https://miniapps.farcaster.xyz/sdk/v1".
- * - Checks if we're actually inside a mini app (using sdk.isInMiniApp if available).
- * - Calls sdk.actions.ready() so Farcaster stops showing the "Ready not called" warning.
- *
- * Outside of Farcaster (localhost, normal browser) this just logs and does nothing.
- */
+// Tell TypeScript about the global mini-app client, so it doesn't complain.
+// You will need to adjust this shape based on the docs.
+declare global {
+  interface Window {
+    // 🔴 CHANGE THIS to match the actual global from the docs
+    FarcasterMiniApp?: {
+      actions?: {
+        ready: () => void;
+      };
+    };
+  }
+}
+
 export function MiniAppReady() {
   useEffect(() => {
-    const w = window as any;
+    try {
+      // Only run in the browser
+      if (typeof window === "undefined") return;
 
-    function tryCallReady() {
-      const sdk = w.sdk;
-      if (!sdk) {
-        console.log("[MiniApp] sdk not present yet");
-        return false;
+      // 🔴 If the docs use a *different* global name,
+      // update this line accordingly.
+      const client = window.FarcasterMiniApp;
+
+      if (client?.actions?.ready) {
+        client.actions.ready();
+        console.log("[mini-app] actions.ready() called");
+      } else {
+        console.log(
+          "[mini-app] Mini app client not found – probably running in normal browser, or SDK not injected."
+        );
       }
-
-      // If SDK exposes a helper like isInMiniApp / isMiniApp, use it
-      let inMiniApp = true;
-      try {
-        if (typeof sdk.isInMiniApp === "function") {
-          inMiniApp = sdk.isInMiniApp();
-        } else if (typeof sdk.isMiniApp === "function") {
-          inMiniApp = sdk.isMiniApp();
-        }
-      } catch (e) {
-        console.warn("[MiniApp] error checking isInMiniApp", e);
-      }
-
-      if (!inMiniApp) {
-        console.log("[MiniApp] Not running inside Farcaster mini app, skipping ready()");
-        return true; // we’re “done” for this environment
-      }
-
-      if (
-        sdk.actions &&
-        typeof sdk.actions.ready === "function"
-      ) {
-        sdk.actions.ready();
-        console.log("[MiniApp] sdk.actions.ready() called ✅");
-        return true;
-      }
-
-      console.log("[MiniApp] sdk.actions.ready not available yet");
-      return false;
+    } catch (err) {
+      console.error("[mini-app] Failed to call actions.ready()", err);
     }
-
-    // Try immediately
-    let done = tryCallReady();
-
-    // Retry a few times in case SDK or context is attached a bit later
-    const intervalId = setInterval(() => {
-      if (done) {
-        clearInterval(intervalId);
-        return;
-      }
-      done = tryCallReady();
-      if (done) clearInterval(intervalId);
-    }, 500);
-
-    return () => clearInterval(intervalId);
   }, []);
 
   return null; // no UI

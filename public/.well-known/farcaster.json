@@ -3,7 +3,7 @@
     "name": "Farcaster Analytics",
     "version": "1",
     "iconUrl": "https://devair-analytics-main.vercel.app/icon.png",
-    "homeUrl": "https://devair-analytics-main.vercel.app",
+    "homeUrl": "https://devair-analytics-main.vercel.app/?fid={fid}",  // 👈 change
     "splashImageUrl": "https://devair-analytics-main.vercel.app/icon.png",
     "splashBackgroundColor": "#6200EA",
     "subtitle": "grow while monitoring ",

@@ -1,10 +1,9 @@
 // src/components/layout/AppShell.tsx
-"use client";
+import type { ReactNode } from "react";
 
-import { useEffect } from "react";
-import { sdk, isMiniApp } from "@farcaster/miniapp-sdk";
+type TabId = "overview" | "content";
 
-type AppShellProps = {
+interface AppShellProps {
   user: {
     username: string;
     displayName: string;
@@ -12,74 +11,67 @@ type AppShellProps = {
     followerCount: number;
     verifiedFollowerCount: number;
   };
-  activeTab: "overview" | "content";
-  onTabChange: (tab: "overview" | "content") => void;
-  children: React.ReactNode;
-};
+  activeTab: TabId;
+  onTabChange: (tab: TabId) => void;
+  children: ReactNode;
+}
 
-export function AppShell({ user, activeTab, onTabChange, children }: AppShellProps) {
-  // 🔑 Tell Warpcast “my UI is ready, hide the splash”
-  useEffect(() => {
-    async function markReady() {
-      try {
-        // Only call this when actually running as a mini app
-        if (await isMiniApp()) {
-          await sdk.actions.ready();
-        }
-      } catch (err) {
-        console.error("[miniapp] failed to call sdk.actions.ready()", err);
-      }
-    }
-
-    // Only run in browser
-    if (typeof window !== "undefined") {
-      markReady();
-    }
-  }, []);
+export function AppShell(props: AppShellProps) {
+  const { user, activeTab, onTabChange, children } = props;
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white">
-      {/* your existing header / layout / tabs go here */}
-      {/* e.g.: */}
-      <header className="border-b border-white/5 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {user.avatarUrl && (
+    <div className="min-h-screen bg-[#050816] text-[#F9FAFB] flex flex-col">
+      {/* Header */}
+      <header className="flex items-center gap-3 px-4 py-3 border-b border-[#1F2933] bg-gradient-to-r from-[#050816] via-[#050816] to-[#0B1020]">
+        <div className="w-10 h-10 rounded-full bg-[#111827] overflow-hidden border border-[#1F2933]">
+          {user.avatarUrl ? (
             <img
               src={user.avatarUrl}
-              alt={user.displayName}
-              className="w-10 h-10 rounded-full"
+              alt={user.username}
+              className="w-full h-full object-cover"
             />
-          )}
-          <div>
-            <div className="text-sm text-white/60">Farcaster analytics for</div>
-            <div className="font-semibold">
-              {user.displayName} <span className="text-white/60">@{user.username}</span>
-            </div>
-          </div>
+          ) : null}
         </div>
-
-        {/* Tab buttons, etc. */}
-        <div className="flex gap-2">
-          <button
-            className={`px-3 py-1 rounded-full text-xs ${
-              activeTab === "overview" ? "bg-violet-600" : "bg-white/5"
-            }`}
-            onClick={() => onTabChange("overview")}
-          >
-            Overview
-          </button>
-          <button
-            className={`px-3 py-1 rounded-full text-xs ${
-              activeTab === "content" ? "bg-violet-600" : "bg-white/5"
-            }`}
-            onClick={() => onTabChange("content")}
-          >
-            Content
-          </button>
+        <div className="flex flex-col">
+          <span className="text-xs text-[#9CA3AF]">Farcaster analytics for</span>
+          <span className="font-semibold text-sm">
+            {user.displayName} @{user.username}
+          </span>
+          <span className="text-[11px] text-[#9CA3AF]">
+            {user.followerCount.toLocaleString()} followers •{" "}
+            {user.verifiedFollowerCount.toLocaleString()} verified
+          </span>
         </div>
       </header>
 
-      <main className="px-4 py-6">{children}</main>
+      {/* Tabs */}
+      <nav className="flex px-4 pt-3 gap-2 text-xs border-b border-[#1F2933] bg-[#050816]">
+        <button
+          className={`px-3 py-2 rounded-full transition-colors ${
+            activeTab === "overview"
+              ? "bg-[#0052FF] text-white shadow-sm"
+              : "bg-[#111827] text-[#E5E7EB] hover:bg-[#1F2937]"
+          }`}
+          onClick={() => onTabChange("overview")}
+        >
+          Overview
+        </button>
+        <button
+          className={`px-3 py-2 rounded-full transition-colors ${
+            activeTab === "content"
+              ? "bg-[#0052FF] text-white shadow-sm"
+              : "bg-[#111827] text-[#E5E7EB] hover:bg-[#1F2937]"
+          }`}
+          onClick={() => onTabChange("content")}
+        >
+          Content
+        </button>
+      </nav>
+
+      {/* Content */}
+      <main className="flex-1 overflow-y-auto px-4 py-3 bg-[#050816]">
+        {children}
+      </main>
     </div>
   );
 }

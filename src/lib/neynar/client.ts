@@ -9,6 +9,10 @@ if (!NEYNAR_API_KEY) {
   );
 }
 
+/**
+ * Low-level helper for calling Neynar.
+ * Example path: `/farcaster/user/by_username?username=devair-md`
+ */
 export async function neynarFetch(path: string) {
   if (!NEYNAR_API_KEY) {
     throw new Error("NEYNAR_API_KEY is missing");
@@ -19,7 +23,7 @@ export async function neynarFetch(path: string) {
       "Content-Type": "application/json",
       "x-api-key": NEYNAR_API_KEY,
     },
-    cache: "no-store",
+    cache: "no-store", // 🔒 always hit Neynar, no Next.js caching
   });
 
   if (!res.ok) {
@@ -33,23 +37,25 @@ export async function neynarFetch(path: string) {
 }
 
 /**
- * Fetch a single Farcaster user by username.
- * Docs: GET /v2/farcaster/user/by_username?username=...
+ * Fetch a user by username.
+ * Neynar docs: GET /v2/farcaster/user/by_username?username=...
  */
 export async function getUserProfileByUsername(username: string) {
   const data = await neynarFetch(
     `/farcaster/user/by_username?username=${encodeURIComponent(username)}`
   );
-  return data; // { user: { ... } }
+  // Neynar returns { user: { ... } }
+  return data;
 }
 
 /**
- * Fetch a single Farcaster user by fid.
- * Docs: GET /v2/farcaster/user?fid=...
+ * Fetch a user by fid.
+ * Neynar docs: GET /v2/farcaster/user?fid=...
  */
 export async function getUserProfileByFid(fid: number) {
   const data = await neynarFetch(
     `/farcaster/user?fid=${encodeURIComponent(String(fid))}`
   );
-  return data; // { user: { ... } }
+  // Neynar returns { user: { ... } }
+  return data;
 }

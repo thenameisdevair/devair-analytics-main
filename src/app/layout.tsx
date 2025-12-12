@@ -1,13 +1,11 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
-import FarcasterReady from "../components/FarcasterReady";
-// ⬆ keep any other imports you already had (Providers, fonts, etc.)
+import { FarcasterReady } from "../components/FarcasterReady";
 
 export const metadata: Metadata = {
-  title: "Farcaster Analytics",
-  description: "Track your Farcaster growth and content performance",
-  // keep any extra fields you already had
+  title: "Devair Analytics",
+  description: "Farcaster analytics mini app",
 };
 
 export default function RootLayout({
@@ -18,11 +16,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {/* 👇 This is the only new thing that matters */}
+        {/* This tells the Farcaster client “my UI is ready, hide the splash” */}
         <FarcasterReady />
 
-        {/* If you use a Providers component, keep it exactly as before */}
-        {/* <Providers>{children}</Providers> */}
         {children}
       </body>
     </html>

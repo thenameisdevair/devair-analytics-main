@@ -4,18 +4,19 @@
 import { useEffect } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 
-export default function FarcasterReady() {
+export function FarcasterReady() {
   useEffect(() => {
     (async () => {
       try {
-        // This tells Warpcast: "my UI is ready, hide the splash"
+        // This will only fully work inside the Farcaster mini app container.
+        // Outside (normal browser) it may throw, and that's fine – we catch it.
         await sdk.actions.ready();
+        console.log("[FarcasterReady] sdk.actions.ready() called");
       } catch (e) {
-        console.error("sdk.actions.ready() failed:", e);
+        console.error("[FarcasterReady] sdk.actions.ready() failed:", e);
       }
     })();
   }, []);
 
-  // This component only performs a side-effect, it renders nothing
   return null;
 }

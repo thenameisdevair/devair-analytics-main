@@ -33,27 +33,26 @@ export function AnalyticsClientPage({
   /**
    * 🔥 Mini-app auto-FID logic
    *
-   * When running inside Farcaster, any `fetch("/api/miniapp/whoami")`
-   * will include the signed mini-app context. Your backend can decode that
-   * (Quick Auth) and return { fid, username, ... }.
+   * When running inside Farcaster, the host injects mini-app context into
+   * requests from your app. We call /api/miniapp/whoami as POST, the backend
+   * reads miniAppContext and returns { fid, username }.
    *
-   * Here we:
-   * - call /api/miniapp/whoami
-   * - if it returns a numeric fid different from user.fid,
-   *   we redirect to /?fid=<viewerFid> so page.tsx reloads analytics
-   *   for the actual viewer.
-   *
-   * In a normal browser (not in Farcaster), this route will usually return
-   * 4xx/5xx → we catch it and do nothing. Manual ?username= / ?fid= still work.
+   * In a normal browser this will usually return 400, which we just log
+   * and ignore – manual ?username= / ?fid= still work.
    */
   useEffect(() => {
     (async () => {
       try {
-        // Just a safety check, though in "use client" this should always be defined
         if (typeof window === "undefined") return;
 
         const res = await fetch("/api/miniapp/whoami", {
-          method: "GET",
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // Body content doesn't matter much – Farcaster host will wrap
+          // it with its own miniAppContext.
+          body: JSON.stringify({ type: "whoami" }),
         });
 
         if (!res.ok) {
@@ -83,7 +82,7 @@ export function AnalyticsClientPage({
           return;
         }
 
-        // Already showing this FID → no redirect
+        // Already showing this FID → nothing to do
         if (viewerFid === user.fid) {
           return;
         }
@@ -105,7 +104,6 @@ export function AnalyticsClientPage({
 
         router.replace(target);
       } catch (err) {
-        // Very common when not inside Farcaster mini app or when whoami is not wired yet
         console.warn(
           "[AnalyticsClientPage] mini-app whoami fetch failed (likely not in mini app):",
           err

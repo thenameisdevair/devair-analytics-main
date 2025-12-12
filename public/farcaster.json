@@ -1,0 +1,18 @@
+{
+  "frame": {
+    "name": "Farcaster Analytics",
+    "version": "1",
+    "iconUrl": "https://devair-analytics-main.vercel.app/icon.png",
+    "homeUrl": "https://devair-analytics-main.vercel.app/?fid={fid}",  // 👈 change
+    "splashImageUrl": "https://devair-analytics-main.vercel.app/icon.png",
+    "splashBackgroundColor": "#6200EA",
+    "subtitle": "grow while monitoring ",
+    "description": "Able to manage and watch your growth",
+    "primaryCategory": "utility"
+  },
+  "accountAssociation": {
+    "header": "eyJmaWQiOjc3NDY0MywidHlwZSI6ImF1dGgiLCJrZXkiOiIweDk0QkZlNzMwNDM2QjM2YUU4YjFiRTQ5MGY4OWYzNTc1MDE0RUU5MjcifQ",
+    "payload": "eyJkb21haW4iOiJkZXZhaXItYW5hbHl0aWNzLW1haW4udmVyY2VsLmFwcCJ9",
+    "signature": "phPSDttR2XjkZQwNWaQ2k0cQiWZ/Cfbtu92ipa31+o0kZsOYvMaQhKAIL899jU6jfyRwyGEnhL4inq3iLly/JBw="
+  }
+}

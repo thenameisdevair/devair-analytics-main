@@ -1,15 +1,23 @@
 // src/app/layout.tsx
-import type { ReactNode } from "react";
+import type { Metadata } from "next";
 import "./globals.css";
 import { MiniAppReady } from "../components/MiniAppReady";
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export const metadata: Metadata = {
+  title: "Farcaster Analytics",
+  description: "Analytics for your Farcaster account",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <body>
-        {/* This runs once on mount in the browser and calls actions.ready() */}
+        {/* This will call sdk.actions.ready() when loaded inside a mini app */}
         <MiniAppReady />
-
         {children}
       </body>
     </html>

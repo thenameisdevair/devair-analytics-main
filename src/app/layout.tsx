@@ -1,30 +1,15 @@
-import type { Metadata } from "next";
+// src/app/layout.tsx
+import type { ReactNode } from "react";
 import "./globals.css";
-import Script from "next/script";
 import { MiniAppReady } from "../components/MiniAppReady";
 
-export const metadata: Metadata = {
-  title: "Farcaster Analytics",
-  description: "Devair Farcaster analytics mini app",
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        {/* Load Farcaster Mini Apps SDK once, for the whole app */}
-        <Script
-          src="https://miniapps.farcaster.xyz/sdk/v1"
-          strategy="afterInteractive"
-        />
-      </head>
-      <body className="bg-neutral-950 text-neutral-50">
-        {/* This will call sdk.actions.ready() when appropriate */}
+      <body>
+        {/* This runs once on mount in the browser and calls actions.ready() */}
         <MiniAppReady />
+
         {children}
       </body>
     </html>
